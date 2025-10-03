@@ -1,115 +1,244 @@
-# LEAN Trading Bot Stack
+# LEAN Trading Bot Stack 🚀
 
-🚀 **Kompletny projekt bota tradingowego oparty na QuantConnect LEAN z Web UI, integracją ML/AI oraz obsługą wielu brokerów**
+> **Status**: ✅ NAPRAWIONY - Problem z brakującymi plikami nginx rozwiązany
 
-## 🌟 Funkcje
+Kompletny stack do automatycznego tradingu z wykorzystaniem QuantConnect LEAN Engine, Docker i tunelowaniem przez internet.
 
-- ⚡ **QuantConnect LEAN Engine** - Profesjonalny silnik backtestingu i live tradingu
-- 🌐 **Responsywne Web UI** - Konfigurator strategii, zarządzanie brokerami, monitorowanie
-- 🤖 **Integracja AI/ML** - Import/eksport modeli ONNX, TensorFlow, scikit-learn
-- 🔗 **Wielobrokerni** - Obsługa FX/CFD, krypto i MT4/MT5 bridge
-- 🔒 **Bezpieczny tunelowaie** - Ngrok, LocalTunnel, Cloudflare Tunnel i więcej
-- 🐳 **Docker Ready** - Pełna konteneryzacja z docker-compose
+## 🎯 Funkcjonalności
 
-## 🚀 Szybki start
+- **QuantConnect LEAN Engine** - Zaawansowany silnik do algorytmicznego tradingu
+- **Docker Stack** - Konteneryzacja wszystkich serwisów (PostgreSQL, Redis, Nginx, Flask)
+- **Web Dashboard** - Panel kontrolny z wizualizacjami
+- **Tunelowanie** - Dostęp przez internet (LocalTunnel, Ngrok, Cloudflare)
+- **API REST** - Interfejs programistyczny
+- **Paper Trading** - Bezpieczne testowanie strategii
+- **Automatyczne backupy** - Zabezpieczenie danych
+
+## 🛠️ Szybka instalacja
+
+### ⚡ Automatyczna naprawa (ZALECANE)
+
+Jeśli masz problemy z instalacją, użyj skryptu naprawczego:
 
 ```bash
-# Klonuj repozytorium
+# Sklonuj repozytorium
 git clone https://github.com/szarastrefa/lean-trading-bot-stack.git
 cd lean-trading-bot-stack
 
-# Uruchom instalator
-./install.sh
+# Uruchom skrypt naprawczy
+sudo chmod +x scripts/fix-installation.sh
+sudo ./scripts/fix-installation.sh
 
-# Lub ręcznie z docker-compose
-cp .env.example .env
-# Edytuj .env z własnymi kluczami API
-docker-compose up --build
+# Uruchom instalację
+./install.sh
 ```
 
-## 📋 Wspierani brokerzy
+### 📋 Standardowa instalacja
 
-### FX/CFD
-- XM, IC Markets, RoboForex
-- InstaForex, FBS, XTB
-- Admiral Markets, IG Group, Plus500
-- SabioTrade
+```bash
+# 1. Sklonuj repozytorium
+git clone https://github.com/szarastrefa/lean-trading-bot-stack.git
+cd lean-trading-bot-stack
 
-### Krypto/Exchange
-- Binance, Coinbase Pro, Kraken
-- Bitstamp, Bitfinex, Gemini
-- Huobi, OKX, Bybit, KuCoin
+# 2. Uruchom instalator
+./install.sh
 
-### MT4/MT5 Integration
-- Natywny bridge adapter
-- EA server proxy
+# 3. Skonfiguruj QuantConnect API w .env
+nano .env
+
+# 4. Uruchom serwisy
+docker-compose up -d
+
+# 5. Uruchom tunelowanie (opcjonalne)
+scripts/start-tunnel.sh &
+```
+
+## 🌐 Dostęp do aplikacji
+
+Po instalacji aplikacja będzie dostępna pod adresami:
+
+- **🌐 Aplikacja główna**: https://eqtrader.loca.lt
+- **📊 Dashboard**: https://eqtrader.loca.lt/dashboard  
+- **🔗 API**: https://eqtrader.loca.lt/api
+- **📚 Dokumentacja API**: https://eqtrader.loca.lt/docs
+
+## 🔐 Dane dostępowe
+
+### Domyślne logowanie
+- **Username**: `admin`
+- **Password**: `admin123!@#` ⚠️ *Zmień po pierwszym logowaniu!*
+
+### Wygenerowane hasła (sprawdź w `.env`)
+- **PostgreSQL**: Automatycznie wygenerowane 32-znakowe hasło
+- **Redis**: Automatycznie wygenerowane 16-znakowe hasło  
+- **Flask Secret**: Automatycznie wygenerowany 64-znakowy klucz
+- **JWT Secret**: Automatycznie wygenerowany token
+
+Aby wyświetlić wszystkie dane dostępowe:
+```bash
+./scripts/show-info.sh
+```
+
+## ⚙️ Konfiguracja
+
+### 1. QuantConnect API
+
+Uzupełnij dane w pliku `.env`:
+```bash
+QC_API_ACCESS_TOKEN=your_actual_token_here
+QC_USER_ID=your_actual_user_id_here
+```
+
+Aby otrzymać klucze:
+1. Zarejestruj się na https://www.quantconnect.com
+2. Przejdź do Account → API
+3. Skopiuj Access Token i User ID
+
+### 2. Tunelowanie (opcjonalne)
+
+Dostępne opcje:
+- **LocalTunnel** (domyślne, darmowe)
+- **Ngrok** (stabilniejsze, wymagana rejestracja)
+- **Cloudflare Tunnel** (enterprise)
+
+Dla Ngrok uzupełnij:
+```bash
+NGROK_AUTH_TOKEN=your_ngrok_token
+```
+
+## 🔧 Rozwiązywanie problemów
+
+### Problem: `path "/docker/nginx" not found`
+
+**Rozwiązanie**:
+```bash
+sudo ./scripts/fix-installation.sh
+./install.sh
+```
+
+### Problem: Błędy uprawnień Docker
+
+**Rozwiązanie**:
+```bash
+sudo usermod -aG docker $USER
+newgrp docker
+# lub wyloguj się i zaloguj ponownie
+```
+
+### Problem: Kontener nie startuje
+
+**Diagnostyka**:
+```bash
+docker-compose ps
+docker-compose logs [nazwa-serwisu]
+```
 
 ## 📁 Struktura projektu
 
 ```
-├── README.md              # Ten plik
-├── docker-compose.yml     # Orkiestracja kontenerów
-├── install.sh            # Interaktywny instalator
-├── .env.example          # Przykład konfiguracji
-├── docs/                 # Dokumentacja
-│   ├── INSTALL.md       # Instrukcje instalacji
-│   ├── TUNNELING.md     # Konfiguracja tunelowania
-│   ├── BROKERS.md       # Konfiguracja brokerów
-│   └── SECURITY.md      # Wytyczne bezpieczeństwa
-├── docker/              # Dockerfile'y
-│   ├── lean/
-│   ├── webui/
-│   └── ml-runtime/
-├── webui/               # Frontend i backend WebUI
-│   ├── frontend/        # React aplikacja
-│   └── backend/         # Flask API
-├── lean/                # Konfiguracje LEAN
-│   ├── config/         # Pliki konfiguracyjne
-│   ├── adapters/       # Adaptery brokerów
-│   └── strategies/     # Przykładowe strategie
-├── models/              # Modele ML i przykłady
-│   ├── examples/       # Przykładowe modele
-│   └── converters/     # Konwertery formatów
-└── .github/
-    └── workflows/      # CI/CD pipelines
+lean-trading-bot-stack/
+├── .env                    # Zmienne środowiskowe
+├── .env.fixed              # Wzorcowy plik .env z hasłami
+├── docker-compose.yml      # Konfiguracja kontenerów
+├── install.sh              # Główny instalator
+├── docker/
+│   ├── nginx/              # Konfiguracja serwera web
+│   ├── lean/               # LEAN Engine
+│   └── tunnel/             # Tunelowanie
+├── scripts/
+│   ├── fix-installation.sh # Skrypt naprawczy ✨
+│   ├── show-info.sh        # Wyświetl dane dostępowe
+│   └── start-tunnel.sh     # Uruchom tunelowanie
+├── webui/                  # Interfejs webowy
+└── docs/                   # Dokumentacja
 ```
 
-## 🔧 Opcje tunelowania
+## 🛠️ Przydatne polecenia
 
-- **Ngrok** - Najpopularniejszy, płatne domeny niestandardowe
-- **LocalTunnel** - Darmowy, prosty w użyciu
-- **Serveo** - SSH-based tunelowanie
-- **Cloudflare Tunnel** - Enterprise-grade security
-- **PageKite** - Niezawodny, płatny
-- **Telebit** - Open source alternatywa
+```bash
+# Zarządzanie serwisami
+docker-compose up -d          # Uruchom wszystkie serwisy
+docker-compose down           # Zatrzymaj wszystkie serwisy
+docker-compose restart        # Restartuj wszystkie serwisy
+docker-compose logs -f        # Zobacz logi na żywo
 
-## 📖 Dokumentacja
+# Zarządzanie pojedynczymi serwisami
+docker-compose restart nginx  # Restartuj tylko nginx
+docker-compose logs web       # Logi aplikacji web
 
-- [📦 Instalacja](./docs/INSTALL.md) - Szczegółowe instrukcje instalacji
-- [🌐 Tunelowanie](./docs/TUNNELING.md) - Konfiguracja wszystkich opcji tunelowania
-- [🏦 Brokerzy](./docs/BROKERS.md) - Konfiguracja API brokerów z przykładami
-- [🔒 Bezpieczeństwo](./docs/SECURITY.md) - Wytyczne produkcyjne i hardening
+# Diagnostyka
+docker-compose ps             # Status kontenerów
+docker system df              # Użycie miejsca Docker
+docker system prune           # Wyczyść nieużywane dane
 
-## ⚡ Technologie
+# Backup
+docker-compose exec postgres pg_dump -U lean_user lean_trading > backup.sql
 
-- **Backend**: QuantConnect LEAN (C#), Flask (Python)
-- **Frontend**: React + Bootstrap
-- **ML Runtime**: ONNX Runtime, TensorFlow, scikit-learn
-- **Konteneryzacja**: Docker + Docker Compose
-- **Proxy/Tunelowanie**: Nginx, różne usługi tunelowania
+# Przywracanie
+docker-compose exec -T postgres psql -U lean_user lean_trading < backup.sql
+```
 
-## 🤝 Wkład
+## 🔒 Bezpieczeństwo
 
-Zachęcamy do współpracy! Przeczytaj [CONTRIBUTING.md](./CONTRIBUTING.md) i prześlij pull request.
+- ✅ **Automatycznie generowane hasła** z wysoką entropią
+- ✅ **Separacja kontenerów** Docker
+- ✅ **Nginx reverse proxy** z security headers
+- ✅ **Paper trading domyślnie** dla bezpieczeństwa
+- ⚠️ **Zmień hasło admin** po pierwszym logowaniu
+- ⚠️ **Używaj HTTPS** w produkcji
+- ⚠️ **Regularnie aktualizuj** hasła i tokeny
 
-## 📄 Licencja
+## 📊 Monitoring
 
-Apache 2.0 License - zobacz [LICENSE](./LICENSE)
+```bash
+# Status wszystkich serwisów
+docker-compose ps
 
-## ⚠️ Disclaimer
+# Użycie zasobów
+docker stats
 
-Ten projekt jest przeznaczony wyłącznie do celów edukacyjnych. Trading wiąże się z ryzykiem straty kapitału. Zawsze przestrzegaj lokalnych regulacji finansowych.
+# Logi błędów nginx
+docker-compose logs nginx | grep error
+
+# Monitoring bazy danych
+docker-compose exec postgres psql -U lean_user -d lean_trading -c "SELECT * FROM pg_stat_activity;"
+```
+
+## 🤝 Wsparcie
+
+Jeśli masz problemy:
+
+1. **Uruchom skrypt naprawczy**: `sudo ./scripts/fix-installation.sh`
+2. **Sprawdź logi**: `docker-compose logs -f`
+3. **Sprawdź status**: `docker-compose ps`
+4. **Wyświetl konfigurację**: `./scripts/show-info.sh`
+
+## 📚 Dokumentacja
+
+- [QuantConnect LEAN](https://www.quantconnect.com/docs/v2/lean-cli)
+- [Docker Compose](https://docs.docker.com/compose/)
+- [LocalTunnel](https://localtunnel.github.io/www/)
+- [Nginx Configuration](https://nginx.org/en/docs/)
+
+## 📝 Changelog
+
+### v1.1 (2025-10-04)
+- ✅ **NAPRAWIONO**: Problem z brakującymi plikami nginx
+- ➕ Dodano automatyczny skrypt naprawczy
+- ➕ Automatyczne generowanie bezpiecznych haseł
+- ➕ Ulepszona dokumentacja i instrukcje
+- ➕ Dodano skrypty pomocnicze
+- 🔧 Poprawiono konfigurację nginx
+- 🔒 Zwiększone bezpieczeństwo
+
+### v1.0
+- 🎉 Pierwsze wydanie
+- 🐳 Docker stack
+- 🌐 Tunelowanie przez internet
+- 📊 Web dashboard
 
 ---
 
-⭐ **Jeśli projekt Ci się podoba, zostaw gwiazdkę!** ⭐
+**Autor**: [@szarastrefa](https://github.com/szarastrefa)  
+**Licencja**: MIT  
+**Status**: ✅ Aktywnie utrzymywane
