@@ -1,0 +1,60 @@
+{
+  "environment": "live-paper",
+  "algorithm-type-name": "BasicTemplateAlgorithm",
+  "algorithm-language": "Python",
+  "algorithm-location": "/opt/lean/strategies/BasicTemplateAlgorithm.py",
+  
+  "live-mode": true,
+  "live-mode-brokerage": "PaperBrokerage",
+  "data-queue-handler": "QuantConnect.Lean.Engine.DataFeeds.LiveTradingDataFeed",
+  
+  "setup-handler": "QuantConnect.Lean.Engine.Setup.BrokerageSetupHandler",
+  "real-time-handler": "QuantConnect.Lean.Engine.RealTime.LiveTradingRealTimeHandler",
+  "result-handler": "QuantConnect.Lean.Engine.Results.LiveTradingResultHandler",
+  "transaction-handler": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler",
+  "history-provider": "BrokerageHistoryProvider",
+  
+  "log-handler": "QuantConnect.Logging.CompositeLogHandler",
+  "messaging-handler": "QuantConnect.Messaging.Messaging",
+  "job-queue-handler": "QuantConnect.Queues.JobQueue",
+  "api-handler": "QuantConnect.Api.Api",
+  "map-file-provider": "QuantConnect.Data.Auxiliary.LocalDiskMapFileProvider",
+  "factor-file-provider": "QuantConnect.Data.Auxiliary.LocalDiskFactorFileProvider",
+  "data-provider": "QuantConnect.Lean.Engine.DataFeeds.DefaultDataProvider",
+  "alpha-handler": "QuantConnect.Lean.Engine.Alphas.DefaultAlphaHandler",
+  "object-store": "QuantConnect.Lean.Engine.Storage.LocalObjectStore",
+  "data-channel-provider": "DataChannelProvider",
+  
+  "environments": {
+    "live-paper": {
+      "live-mode": true,
+      "live-mode-brokerage": "PaperBrokerage",
+      "data-queue-handler": "PaperBrokerage",
+      "setup-handler": "QuantConnect.Lean.Engine.Setup.BrokerageSetupHandler",
+      "result-handler": "QuantConnect.Lean.Engine.Results.LiveTradingResultHandler",
+      "real-time-handler": "QuantConnect.Lean.Engine.RealTime.LiveTradingRealTimeHandler",
+      "transaction-handler": "QuantConnect.Lean.Engine.TransactionHandlers.BrokerageTransactionHandler"
+    }
+  },
+  
+  "data-folder": "/opt/lean/data",
+  "cache-location": "/opt/lean/cache",
+  "results-destination-folder": "/opt/lean/results",
+  
+  "debugging": false,
+  "debugging-method": "LocalCmdline",
+  "desktop-http-port": "8080",
+  
+  "close-automatically": false,
+  
+  "maximum-warmup-history-days-look-back": 5,
+  "maximum-chart-series": 30,
+  "maximum-data-points-per-chart-series": 4000,
+  
+  "force-exchange-always-open": false,
+  "send-via-api": false,
+  
+  "scheduled-event-leaky-bucket-capacity": 120,
+  "scheduled-event-leaky-bucket-time-interval-minutes": 1440,
+  "scheduled-event-leaky-bucket-refill-amount": 18
+}
