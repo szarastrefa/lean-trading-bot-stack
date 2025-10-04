@@ -1,358 +1,394 @@
 #!/bin/bash
 
-# LEAN Trading Bot Stack - Interaktywny Instalator
-# Autor: LEAN Trading Bot Stack Team
-# Licencja: Apache 2.0
+# LEAN Trading Bot Stack Installer - Enhanced Version
+# Generates random passwords during installation
+# Author: @szarastrefa
+# Version: 2.0
 
 set -e
 
-# Kolory do wyświetlania
+# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
-CYAN='\033[0;36m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-# Funkcje pomocnicze
-print_header() {
-    echo -e "${CYAN}"
-    echo "═══════════════════════════════════════════════════════════════"
-    echo "               LEAN Trading Bot Stack Installer"
-    echo "═══════════════════════════════════════════════════════════════"
-    echo -e "${NC}"
+log_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
 }
 
-print_step() {
-    echo -e "${BLUE}[KROK]${NC} $1"
-}
-
-print_success() {
+log_success() {
     echo -e "${GREEN}[SUKCES]${NC} $1"
 }
 
-print_error() {
-    echo -e "${RED}[BŁĄD]${NC} $1"
-}
-
-print_warning() {
+log_warning() {
     echo -e "${YELLOW}[OSTRZEŻENIE]${NC} $1"
 }
 
-print_info() {
-    echo -e "${CYAN}[INFO]${NC} $1"
+log_error() {
+    echo -e "${RED}[BŁĄD]${NC} $1"
 }
 
-# Sprawdzanie wymagań systemowych
-check_requirements() {
-    print_step "Sprawdzanie wymagań systemowych..."
-    
-    # Sprawdzenie systemu operacyjnego
-    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        OS="linux"
-        print_info "Wykryto system: Linux"
-    elif [[ "$OSTYPE" == "darwin"* ]]; then
-        OS="macos"
-        print_info "Wykryto system: macOS"
-    else
-        print_error "Nieobsługiwany system operacyjny: $OSTYPE"
-        print_info "Obsługiwane systemy: Linux, macOS"
-        exit 1
-    fi
-    
-    # Sprawdzenie dostępności curl
-    if ! command -v curl &> /dev/null; then
-        print_error "curl nie jest zainstalowany. Zainstaluj curl i spróbuj ponownie."
-        exit 1
-    fi
-    
-    # Sprawdzenie dostępności git
-    if ! command -v git &> /dev/null; then
-        print_error "git nie jest zainstalowany. Zainstaluj git i spróbuj ponownie."
-        exit 1
-    fi
-    
-    print_success "Wymagania systemowe spełnione"
+log_step() {
+    echo -e "${BLUE}[KROK]${NC} $1"
 }
 
-# Instalacja Docker
-install_docker() {
-    print_step "Sprawdzanie instalacji Docker..."
-    
-    if command -v docker &> /dev/null && command -v docker-compose &> /dev/null; then
-        print_success "Docker już zainstalowany"
-        return 0
-    fi
-    
-    echo -e "${YELLOW}Docker nie jest zainstalowany. Czy chcesz go zainstalować? (y/n):${NC}"
-    read -r install_docker_choice
-    
-    if [[ $install_docker_choice =~ ^[Yy]$ ]]; then
-        print_step "Instalowanie Docker..."
+# Generate secure random password
+generate_password() {
+    local length=${1:-24}
+    openssl rand -base64 32 | tr -d "/+=" | cut -c1-$length
+}
+
+# Generate hex token
+generate_token() {
+    local length=${1:-32}
+    openssl rand -hex $length
+}
+
+echo "══════════════════════════════════════════════════════════════════"
+echo "               LEAN Trading Bot Stack Installer v2.0"
+echo "              🔐 Z automatycznym generowaniem haseł"
+echo "══════════════════════════════════════════════════════════════════"
+echo ""
+
+# Check requirements
+log_step "Sprawdzanie wymagań systemowych..."
+
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    log_info "Wykryto system: Linux"
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+    log_info "Wykryto system: macOS"
+else
+    log_error "Nieobsługiwany system operacyjny: $OSTYPE"
+    exit 1
+fi
+
+log_success "Wymagania systemowe spełnione"
+
+# Check Docker installation
+log_step "Sprawdzanie instalacji Docker..."
+
+if command -v docker &> /dev/null; then
+    log_success "Docker już zainstalowany"
+else
+    log_warning "Docker nie jest zainstalowany. Czy chcesz go zainstalować? (y/n):"
+    read -r install_docker
+    if [[ $install_docker =~ ^[Yy]$ ]]; then
+        log_step "Instalowanie Docker..."
+        curl -fsSL https://get.docker.com -o get-docker.sh
+        sh get-docker.sh
+        rm get-docker.sh
         
-        if [[ "$OS" == "linux" ]]; then
-            # Instalacja Docker na Linux
-            curl -fsSL https://get.docker.com -o get-docker.sh
-            sudo sh get-docker.sh
+        # Add user to docker group
+        if [[ "$OSTYPE" == "linux-gnu"* ]]; then
             sudo usermod -aG docker $USER
-            
-            # Instalacja Docker Compose
-            sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-            sudo chmod +x /usr/local/bin/docker-compose
-            
-            rm get-docker.sh
-            
-        elif [[ "$OS" == "macos" ]]; then
-            print_info "Na macOS zalecamy instalację Docker Desktop z https://www.docker.com/products/docker-desktop"
-            print_error "Zainstaluj Docker Desktop i uruchom ponownie instalator"
-            exit 1
+            log_warning "Restart może być wymagany dla grupy docker"
+            log_warning "Jeśli otrzymujesz błędy uprawnień, wykonaj: newgrp docker"
         fi
         
-        print_success "Docker zainstalowany. RESTART może być wymagany dla grupy docker."
-        print_warning "Jeśli otrzymujesz błędy uprawnień, wykonaj: newgrp docker"
+        log_success "Docker zainstalowany"
     else
-        print_error "Docker jest wymagany do uruchomienia projektu"
+        log_error "Docker jest wymagany do działania aplikacji"
         exit 1
     fi
-}
+fi
 
-# Konfiguracja tunelowania
-setup_tunneling() {
-    print_step "Konfiguracja tunelowania..."
-    
-    echo -e "${CYAN}Wybierz opcję dostępu do aplikacji:${NC}"
-    echo "1) Tylko lokalne (localhost)"
-    echo "2) Tunelowanie przez internet"
-    echo "3) Własna domena/serwer"
-    
-    read -p "Wybór (1-3): " access_choice
-    
-    case $access_choice in
-        1)
-            echo "TUNNEL_TYPE=none" >> .env
-            print_info "Konfiguracja: tylko dostęp lokalny"
-            ;;
-        2)
-            setup_tunnel_service
-            ;;
-        3)
-            echo "TUNNEL_TYPE=domain" >> .env
-            read -p "Podaj domenę (np. yourdomain.com): " domain_name
-            echo "DOMAIN_NAME=$domain_name" >> .env
-            print_info "Konfiguracja: własna domena $domain_name"
-            print_warning "Skonfiguruj DNS A record wskazujący na IP tego serwera"
-            ;;
-        *)
-            print_error "Nieprawidłowy wybór"
-            exit 1
-            ;;
-    esac
-}
+# Check Docker Compose
+if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null 2>&1; then
+    log_warning "Docker Compose nie znaleziony, instalowanie..."
+    sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    sudo chmod +x /usr/local/bin/docker-compose
+fi
 
-# Konfiguracja usług tunelowania
-setup_tunnel_service() {
-    echo -e "${CYAN}Wybierz usługę tunelowania:${NC}"
-    echo "1) Ngrok (najpopularniejszy)"
-    echo "2) LocalTunnel (darmowy)"
-    echo "3) Serveo (SSH-based)"
-    echo "4) Cloudflare Tunnel (enterprise)"
-    echo "5) PageKite (niezawodny)"
-    echo "6) Telebit (open source)"
-    
-    read -p "Wybór (1-6): " tunnel_choice
-    
-    case $tunnel_choice in
-        1)
-            setup_ngrok
-            ;;
-        2)
-            setup_localtunnel
-            ;;
-        3)
-            setup_serveo
-            ;;
-        4)
-            setup_cloudflare_tunnel
-            ;;
-        5)
-            setup_pagekite
-            ;;
-        6)
-            setup_telebit
-            ;;
-        *)
-            print_error "Nieprawidłowy wybór"
-            exit 1
-            ;;
-    esac
-}
+# Generate secure passwords
+log_step "Generowanie bezpiecznych haseł..."
 
-# Konfiguracja Ngrok
-setup_ngrok() {
-    echo "TUNNEL_TYPE=ngrok" >> .env
-    read -p "Podaj Ngrok Auth Token (z https://dashboard.ngrok.com): " ngrok_token
-    echo "NGROK_AUTH_TOKEN=$ngrok_token" >> .env
-    print_success "Konfiguracja Ngrok zakończona"
-}
+POSTGRES_PASSWORD=$(generate_password 24)
+REDIS_PASSWORD=$(generate_password 16)
+FLASK_SECRET=$(generate_token 32)
+JWT_SECRET=$(generate_token 24)
+ADMIN_PASSWORD=$(generate_password 12)
+SESSION_SECRET=$(generate_token 16)
 
-# Konfiguracja LocalTunnel
-setup_localtunnel() {
-    echo "TUNNEL_TYPE=localtunnel" >> .env
-    read -p "Podaj subdomenę (opcjonalne, ENTER aby losowa): " lt_subdomain
-    if [[ -n "$lt_subdomain" ]]; then
-        echo "LOCALTUNNEL_SUBDOMAIN=$lt_subdomain" >> .env
-    fi
-    print_success "Konfiguracja LocalTunnel zakończona"
-}
+log_success "Bezpieczne hasła wygenerowane"
 
-# Konfiguracja Serveo
-setup_serveo() {
-    echo "TUNNEL_TYPE=serveo" >> .env
-    read -p "Podaj subdomenę (opcjonalne, ENTER aby losowa): " serveo_subdomain
-    if [[ -n "$serveo_subdomain" ]]; then
-        echo "SERVEO_SUBDOMAIN=$serveo_subdomain" >> .env
-    fi
-    print_success "Konfiguracja Serveo zakończona"
-}
+# Tunneling configuration
+log_step "Konfiguracja tunelowania..."
 
-# Konfiguracja Cloudflare Tunnel
-setup_cloudflare_tunnel() {
-    echo "TUNNEL_TYPE=cloudflare" >> .env
-    read -p "Podaj Cloudflare Tunnel Token: " cf_token
-    echo "CLOUDFLARE_TUNNEL_TOKEN=$cf_token" >> .env
-    print_success "Konfiguracja Cloudflare Tunnel zakończona"
-    print_info "Pamiętaj o skonfigurowaniu DNS w Cloudflare Dashboard"
-}
+echo "Wybierz opcję dostępu do aplikacji:"
+echo "1) Tylko lokalne (localhost)"
+echo "2) Tunelowanie przez internet"
+echo "3) Własna domena/serwer"
+read -p "Wybór (1-3): " tunnel_choice
 
-# Konfiguracja PageKite
-setup_pagekite() {
-    echo "TUNNEL_TYPE=pagekite" >> .env
-    read -p "Podaj PageKite kite name: " pk_kite
-    read -p "Podaj PageKite secret: " pk_secret
-    echo "PAGEKITE_KITE=$pk_kite" >> .env
-    echo "PAGEKITE_SECRET=$pk_secret" >> .env
-    print_success "Konfiguracja PageKite zakończona"
-}
+TUNNEL_SERVICE=""
+TUNNEL_SUBDOMAIN=""
+APP_URL="http://localhost"
 
-# Konfiguracja Telebit
-setup_telebit() {
-    echo "TUNNEL_TYPE=telebit" >> .env
-    read -p "Podaj Telebit token (opcjonalne): " telebit_token
-    if [[ -n "$telebit_token" ]]; then
-        echo "TELEBIT_TOKEN=$telebit_token" >> .env
-    fi
-    print_success "Konfiguracja Telebit zakończona"
-}
+case $tunnel_choice in
+    1)
+        log_info "Wybrano dostęp lokalny"
+        APP_URL="http://localhost"
+        ;;
+    2)
+        echo "Wybierz usługę tunelowania:"
+        echo "1) Ngrok (najpopularniejszy)"
+        echo "2) LocalTunnel (darmowy)"
+        echo "3) Serveo (SSH-based)"
+        echo "4) Cloudflare Tunnel (enterprise)"
+        echo "5) PageKite (niezawodny)"
+        echo "6) Telebit (open source)"
+        read -p "Wybór (1-6): " tunnel_service_choice
+        
+        case $tunnel_service_choice in
+            1) TUNNEL_SERVICE="ngrok" ;;
+            2) TUNNEL_SERVICE="localtunnel" ;;
+            3) TUNNEL_SERVICE="serveo" ;;
+            4) TUNNEL_SERVICE="cloudflare" ;;
+            5) TUNNEL_SERVICE="pagekite" ;;
+            6) TUNNEL_SERVICE="telebit" ;;
+            *) TUNNEL_SERVICE="localtunnel" ;;
+        esac
+        
+        read -p "Podaj subdomenę (opcjonalne, ENTER aby losowa): " custom_subdomain
+        if [ -n "$custom_subdomain" ]; then
+            TUNNEL_SUBDOMAIN="$custom_subdomain"
+        else
+            TUNNEL_SUBDOMAIN="lean-$(openssl rand -hex 4)"
+        fi
+        
+        if [ "$TUNNEL_SERVICE" = "localtunnel" ]; then
+            APP_URL="https://${TUNNEL_SUBDOMAIN}.loca.lt"
+        elif [ "$TUNNEL_SERVICE" = "ngrok" ]; then
+            APP_URL="https://${TUNNEL_SUBDOMAIN}.ngrok.io"
+        else
+            APP_URL="https://${TUNNEL_SUBDOMAIN}.example.com"
+        fi
+        
+        log_success "Konfiguracja ${TUNNEL_SERVICE} zakończona"
+        ;;
+    3)
+        read -p "Podaj własną domenę (np. trading.yourdomain.com): " custom_domain
+        APP_URL="https://$custom_domain"
+        log_success "Konfiguracja własnej domeny zakończona"
+        ;;
+    *)
+        log_warning "Nieprawidłowy wybór, używanie domyślnego (localhost)"
+        APP_URL="http://localhost"
+        ;;
+esac
 
-# Konfiguracja zmiennych środowiskowych
-setup_environment() {
-    print_step "Konfiguracja zmiennych środowiskowych..."
-    
-    if [[ ! -f .env ]]; then
-        cp .env.example .env
-    fi
-    
-    # Generowanie sekretów
-    POSTGRES_PASSWORD=$(openssl rand -base64 32 | tr -d /=+ | cut -c -16)
-    REDIS_PASSWORD=$(openssl rand -base64 32 | tr -d /=+ | cut -c -16)
-    FLASK_SECRET_KEY=$(openssl rand -base64 32)
-    
-    # Aktualizacja .env
-    sed -i.bak "s/POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=$POSTGRES_PASSWORD/" .env
-    sed -i.bak "s/REDIS_PASSWORD=.*/REDIS_PASSWORD=$REDIS_PASSWORD/" .env
-    sed -i.bak "s/FLASK_SECRET_KEY=.*/FLASK_SECRET_KEY=$FLASK_SECRET_KEY/" .env
-    
-    rm .env.bak
-    
-    print_success "Zmienne środowiskowe skonfigurowane"
-    print_warning "Edytuj plik .env aby dodać klucze API brokerów"
-}
+# Create environment file with generated passwords
+log_step "Konfiguracja zmiennych środowiskowych..."
 
-# Budowanie i uruchamianie kontenerów
-start_services() {
-    print_step "Budowanie i uruchamianie kontenerów..."
-    
-    # Budowanie obrazów
-    docker-compose build
-    
-    # Uruchamianie usług podstawowych
-    docker-compose up -d postgres redis
-    
-    # Oczekanie na uruchomienie bazy danych
-    print_info "Oczekiwanie na uruchomienie bazy danych..."
-    sleep 10
-    
-    # Uruchamianie pozostałych usług
-    if [[ "$(grep TUNNEL_TYPE .env | cut -d= -f2)" != "none" ]]; then
-        docker-compose --profile tunnel up -d
-    else
-        docker-compose up -d
-    fi
-    
-    print_success "Wszystkie usługi uruchomione"
-}
+cat > .env << EOF
+# LEAN Trading Bot Stack - Environment Configuration
+# Generated: $(date)
+# 🔐 All passwords are randomly generated for security
 
-# Wyświetlanie informacji końcowych
-show_final_info() {
-    print_step "Instalacja zakończona!"
-    
-    echo -e "${GREEN}"
-    echo "═══════════════════════════════════════════════════════════════"
-    echo "                    INSTALACJA ZAKOŃCZONA"
-    echo "═══════════════════════════════════════════════════════════════"
-    echo -e "${NC}"
-    
-    echo -e "${CYAN}Dostępne usługi:${NC}"
-    echo "• Web UI: http://localhost:3000"
-    echo "• API Backend: http://localhost:5000"
-    echo "• ML Jupyter Lab: http://localhost:8888"
-    echo "• PostgreSQL: localhost:5432"
-    echo "• Redis: localhost:6379"
-    
-    if [[ "$(grep TUNNEL_TYPE .env | cut -d= -f2)" != "none" ]]; then
-        echo -e "${YELLOW}• Tunel będzie dostępny po uruchomieniu${NC}"
-    fi
-    
-    echo -e "\n${BLUE}Przydatne komendy:${NC}"
-    echo "• Sprawdź status: docker-compose ps"
-    echo "• Zobacz logi: docker-compose logs -f"
-    echo "• Zatrzymaj: docker-compose down"
-    echo "• Restart: docker-compose restart"
-    
-    echo -e "\n${PURPLE}Następne kroki:${NC}"
-    echo "1. Edytuj plik .env i dodaj klucze API brokerów"
-    echo "2. Sprawdź dokumentację w folderze docs/"
-    echo "3. Uruchom przykładową strategię"
-    
-    echo -e "\n${RED}WAŻNE:${NC}"
-    echo "• Nigdy nie commituj pliku .env do repozytorium"
-    echo "• Używaj tylko na papierowym tradingu do testów"
-    echo "• Przeczytaj docs/SECURITY.md przed produkcją"
-}
+# ===== DATABASE CONFIGURATION =====
+POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+POSTGRES_USER=leanuser
+POSTGRES_DB=lean_trading
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
 
-# Główna funkcja
-main() {
-    print_header
-    
-    # Sprawdzenie czy jesteśmy w odpowiednim katalogu
-    if [[ ! -f docker-compose.yml ]]; then
-        print_error "Uruchom instalator w katalogu głównym projektu (gdzie jest docker-compose.yml)"
-        exit 1
-    fi
-    
-    check_requirements
-    install_docker
-    setup_tunneling
-    setup_environment
-    start_services
-    show_final_info
-    
-    print_success "Instalator zakończony pomyślnie!"
-}
+# ===== REDIS CONFIGURATION =====
+REDIS_PASSWORD=$REDIS_PASSWORD
+REDIS_HOST=redis
+REDIS_PORT=6379
 
-# Obsługa przerwania
-trap 'print_error "Instalacja przerwana przez użytkownika"; exit 1' INT
+# ===== FLASK APPLICATION =====
+FLASK_SECRET_KEY=$FLASK_SECRET
+FLASK_HOST=0.0.0.0
+FLASK_PORT=5000
+FLASK_ENV=production
 
-# Uruchomienie głównej funkcji
-main "$@"
+# ===== ADMIN CREDENTIALS =====
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=$ADMIN_PASSWORD
+ADMIN_EMAIL=admin@localhost
+
+# ===== QUANTCONNECT API =====
+QC_API_ACCESS_TOKEN=your_quantconnect_token_here
+QC_USER_ID=your_quantconnect_user_id
+
+# ===== TUNNELING SERVICES =====
+TUNNEL_SERVICE=$TUNNEL_SERVICE
+TUNNEL_SUBDOMAIN=$TUNNEL_SUBDOMAIN
+NGROK_AUTH_TOKEN=
+CLOUDFLARE_TUNNEL_TOKEN=
+
+# ===== APPLICATION URLS =====
+APP_URL=$APP_URL
+API_BASE_URL=http://localhost:5000
+
+# ===== LEAN ENGINE CONFIGURATION =====
+LEAN_ENGINE_HOST=lean_engine
+LEAN_ENGINE_PORT=8080
+LEAN_DATA_FOLDER=/data
+LEAN_OUTPUT_FOLDER=/output
+
+# ===== SECURITY =====
+JWT_SECRET_KEY=$JWT_SECRET
+SESSION_SECRET=$SESSION_SECRET
+SESSION_TIMEOUT=3600
+SSL_VERIFY=true
+
+# ===== LOGGING =====
+LOG_LEVEL=INFO
+LOG_FILE=/logs/trading.log
+LOG_ROTATION=true
+LOG_MAX_SIZE=100MB
+
+# ===== TRADING CONFIGURATION =====
+DEFAULT_CASH=100000
+DEFAULT_CURRENCY=USD
+PAPER_TRADING=true
+RISK_MANAGEMENT=true
+MAX_DRAWDOWN=0.20
+
+# ===== BACKUP CONFIGURATION =====
+BACKUP_ENABLED=true
+BACKUP_SCHEDULE=0 2 * * *
+BACKUP_RETENTION_DAYS=30
+
+# ===== DOCKER CONFIGURATION =====
+DOCKER_COMPOSE_PROJECT_NAME=lean_trading_stack
+DOCKER_REGISTRY=
+DOCKER_TAG=latest
+
+# ===== MONITORING =====
+METRICS_ENABLED=true
+METRICS_PORT=9090
+HEALTH_CHECK_INTERVAL=30
+
+EOF
+
+chmod 600 .env
+log_success "Zmienne środowiskowe skonfigurowane"
+
+# Create credentials backup
+CREDENTIALS_FILE="$HOME/.lean-bot-credentials-$(date +%Y%m%d-%H%M%S)"
+cat > "$CREDENTIALS_FILE" << EOF
+# LEAN Trading Bot Stack - Backup Credentials
+# Generated: $(date)
+# Project: $PWD
+
+========================================
+   LEAN Trading Bot - DANE DOSTĘPOWE
+========================================
+
+🌐 DOSTĘP DO APLIKACJI:
+   URL: $APP_URL
+   Dashboard: $APP_URL/dashboard
+   API: $APP_URL/api
+
+🔐 DANE LOGOWANIA:
+   Username: admin
+   Password: $ADMIN_PASSWORD
+
+🗄️ BAZA DANYCH:
+   Host: localhost:5432
+   Database: lean_trading
+   User: leanuser
+   Password: $POSTGRES_PASSWORD
+
+🔄 REDIS:
+   Host: localhost:6379
+   Password: $REDIS_PASSWORD
+
+🔑 INNE KLUCZE:
+   Flask Secret: $FLASK_SECRET
+   JWT Secret: $JWT_SECRET
+   Session Secret: $SESSION_SECRET
+
+⚠️ BEZPIECZEŃSTWO:
+   - Zmień hasło administratora po pierwszym logowaniu
+   - Uzupełnij dane QuantConnect w pliku .env
+   - Regularnie aktualizuj hasła produkcyjne
+   - Ten plik powinien być przechowywany w bezpiecznym miejscu
+
+EOF
+
+chmod 600 "$CREDENTIALS_FILE"
+log_success "Backup danych dostępowych utworzony: $CREDENTIALS_FILE"
+
+if [ -n "$QC_API_ACCESS_TOKEN" ] && [ "$QC_API_ACCESS_TOKEN" != "your_quantconnect_token_here" ]; then
+    log_success "Dane QuantConnect skonfigurowane"
+else
+    log_warning "Edytuj plik .env aby dodać klucze API brokerów"
+fi
+
+# Build and start containers
+log_step "Budowanie i uruchamianie kontenerów..."
+
+# Remove old containers and images
+docker-compose down --remove-orphans 2>/dev/null || true
+docker system prune -f 2>/dev/null || true
+
+# Start services
+if docker-compose up --build -d; then
+    log_success "Kontenery uruchomione pomyślnie"
+else
+    log_error "Błąd podczas uruchamiania kontenerów"
+    log_info "Sprawdź logi: docker-compose logs -f"
+    exit 1
+fi
+
+# Wait for services to be ready
+log_step "Oczekiwanie na gotowość serwisów..."
+sleep 10
+
+# Check service health
+if docker-compose ps | grep -q "Up"; then
+    log_success "Serwisy są uruchomione"
+else
+    log_warning "Niektóre serwisy mogą nie działać poprawnie"
+    log_info "Sprawdź status: docker-compose ps"
+fi
+
+# Display success message with credentials
+echo ""
+echo "========================================"
+echo "   🎉 INSTALACJA ZAKOŃCZONA POMYŚLNIE!"
+echo "========================================"
+echo ""
+echo "🌐 APLIKACJA DOSTĘPNA POD:"
+echo "   $APP_URL"
+echo "   Dashboard: $APP_URL/dashboard"
+echo "   API: $APP_URL/api"
+echo ""
+echo "🔐 NOWE LOSOWE HASŁA:"
+echo "   👤 Admin: admin / $ADMIN_PASSWORD"
+echo "   🗄️ PostgreSQL: leanuser / $POSTGRES_PASSWORD"
+echo "   🔄 Redis: $REDIS_PASSWORD"
+echo ""
+echo "💾 BACKUP DANYCH:"
+echo "   Plik: $CREDENTIALS_FILE"
+echo ""
+echo "⚠️  ZAPISZ TE HASŁA BEZPIECZNIE!"
+echo "   Nie będą ponownie wyświetlone"
+echo ""
+echo "🛠️  PRZYDATNE POLECENIA:"
+echo "   docker-compose ps              # status kontenerów"
+echo "   docker-compose logs -f         # logi na żywo"
+echo "   docker-compose restart         # restart serwisów"
+echo "   ./scripts/show-info.sh         # pokaż dane dostępowe"
+echo ""
+if [ "$TUNNEL_SERVICE" = "localtunnel" ]; then
+echo "🌐 TUNELOWANIE:"
+echo "   Zainstaluj LocalTunnel: npm install -g localtunnel"
+echo "   Uruchom tunel: lt --port 80 --subdomain $TUNNEL_SUBDOMAIN"
+echo ""
+fi
+echo "🎯 NASTĘPNE KROKI:"
+echo "   1. Uzupełnij dane QuantConnect w .env"
+echo "   2. Zmień hasło admin po pierwszym logowaniu"
+echo "   3. Skonfiguruj strategie tradingowe"
+echo "   4. Uruchom tunelowanie (jeśli wybrane)"
+echo ""
+echo "========================================"
+
+exit 0
